@@ -20,8 +20,12 @@ class database_proc:
 
         self.database_init()
 
-        #默认参数，用来初始化题目重要性
+        #默认参数，用来初始化题目的默认重要性
         self.default_value = 0
+
+        self.most_important = 3
+        self.important      = 2
+        self.no_important   = 1
 
 
     def doc_parser(self,file_name):
@@ -69,6 +73,85 @@ class database_proc:
             print("文件打开异常！",os_e)
         finally:
             pass
+
+    def doc_parser_comm(self,file_name,subject_name):
+        '''
+            将公共文档中的题目按照科目提取
+            file_name : 文档路径加名称
+            subject_name :科目名词，必须为字符串
+        '''
+        # test_no_pattern = r'\d{3}'                 #题号正则匹配pattern，数字连续出现三次视为页码
+        # test_no_re = re.compile(test_no_pattern)
+        subject_pattern = r'第\w+编 ' + subject_name
+        subject_re      = re.compile(subject_pattern)
+        subject_title   = r'第\w+编 '
+        title_re        = re.compile(subject_title)
+        para_found      = 0
+
+        text_pattern    = r'\w+'
+        text_re         = re.compile(text_pattern)
+
+        importance_pattern = r'★{1,3}'
+        importance_re      = re.compile(importance_pattern)
+
+        importance      = 0
+        test_type       = '简答'
+        try :
+            test_data = Document(file_name)
+            for pgs in test_data.paragraphs:
+
+                # search_rslt = test_no_re.search(pgs.text)      #匹配页码
+                subject_search = subject_re.search(pgs.text)
+                title_search   = title_re.search(pgs.text)
+
+                if subject_search != None and para_found == 0:
+                    para_found = 1
+                    print('找到 '+pgs.text)
+                    continue
+                elif title_search != None and para_found ==1 :
+                    para_found = 0
+                    print(subject_name + "加载结束！")
+                    # print(pgs.text)
+                    break
+                
+                text_search = text_re.search(pgs.text)
+
+                if para_found == 1 and text_search != None:
+                    if "★★★" in pgs.text:
+                        importance = self.most_important
+                    elif "★★" in pgs.text:
+                        importance =self.important
+                    else:
+                        importance = self.no_important
+
+                    test_text = importance_re.sub("",pgs.text)
+
+                    # columns_name = ["题目类型","内容","页码","重要性","答对次数","答错次数"]
+                    tmp_dict = {self.columns_name[0]:test_type,
+                                self.columns_name[1]:test_text,
+                                self.columns_name[2]:0,
+                                self.columns_name[3]:importance,
+                                self.columns_name[4]:0,
+                                self.columns_name[5]:0}
+
+                    self.database = self.database.append(tmp_dict,ignore_index=True)
+                
+                # if ("简答：" in pgs.text) or ("简述" in pgs.text):
+                #     
+                # elif "论述：" in pgs.text:
+                #     test_type = '论述'
+                # elif search_rslt != None:
+                #     test_type = '名词解释'
+                # else:
+                #     test_type = None 
+
+                # if test_type != None:
+
+
+        except OSError as os_e:
+            print("文件打开异常！",os_e)
+        finally:
+            pass        
 
     def database_init(self):
         '''
@@ -134,11 +217,12 @@ if __name__ == "__main__":
     print(dp.database)
     print("######################################################")
 
-    dp.doc_parser(r".\题库\发展心理学名词解释及论述.docx")
+    dp.doc_parser_comm(r".\题库\心理学考研必背300题.docx","发展心理学")
+    # dp.doc_parser(r".\题库\发展心理学名词解释及论述.docx")
 
     dp.save_database_to_excel(r'.\example.xlsx',"发心")
 
-    # print("######################################################")
-    # print(dp.database)
-    # print("######################################################")
+    print("######################################################")
+    print(dp.database)
+    print("######################################################")
 
