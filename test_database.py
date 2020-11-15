@@ -4,16 +4,21 @@ import xlwings as xw
 import numpy as np
 import pandas as pd
 import re
+from enum import Enum
 
-class database_proc:
+class subject(Enum):
+    COMM_PSY = '普通心理学'
+    DVP_PSY  = '发展心理学'
+    EDU_PSY  = '教育心理学'
+    SOC_PSY  = '社会心理学'
+    STA_PSY  = '心理统计学'
+    MES_PSY  = '心理测量学'
+    EXP_PSY  = '实验心理学'
+
+
+
+class database_proc(object):
     def __init__(self):
-
-        #初始化题库位置
-        self.test_database_path = r".\题库" "\\"
-        #初始化发心docx文件名
-        self.develop_psychology_file = r"发展心理学名词解释及论述.docx"
-
-        self.file_path_tmp = self.test_database_path + self.develop_psychology_file
 
         #初始化pandas列标题
         self.columns_name = ["题目类型","内容","页码","重要性","答对次数","答错次数"]
@@ -26,6 +31,7 @@ class database_proc:
         self.most_important = 3
         self.important      = 2
         self.no_important   = 1
+        #print("父类初始化完成")
 
 
     def doc_parser(self,file_name):
@@ -33,27 +39,31 @@ class database_proc:
            从word文档中获取数据，并做分类处理
            file_name : word文档路径+文件名
         '''
-        page_num_pattern = r'\d{3}'                 #页码正则匹配pattern，数字连续出现三次视为页码
+        page_num_pattern = r'\d{3}'               #页码正则匹配pattern，数字连续出现三次视为页码
+        text_pattern = r'\w+'                     #文本匹配，至少要有一个文字
         page_num_re = re.compile(page_num_pattern)
+        text_re     = re.compile(text_pattern)
 
         try :
             test_data = Document(file_name)
             for pgs in test_data.paragraphs:
 
                 search_rslt = page_num_re.search(pgs.text)      #匹配页码
+                text_rslt   = text_re.search(pgs.text)
 
                 if search_rslt != None:
                     test_text   = page_num_re.sub('',pgs.text) #如果存在页码，将页码从文本中剔除
                     page_num    = search_rslt.group()          #获得页码
                 else:
                     test_text   = pgs.text
-                    page_num    = np.nan
+                    #page_num 不变
+                    #page_num    = np.nan
                 
                 if ("简答：" in pgs.text) or ("简述" in pgs.text):
                     test_type = '简答'
                 elif "论述：" in pgs.text:
                     test_type = '论述'
-                elif search_rslt != None:
+                elif text_rslt != None:        #没有论述和简答标示，但是有其它文本，同意归类为名词解释
                     test_type = '名词解释'
                 else:
                     test_type = None 
@@ -72,7 +82,7 @@ class database_proc:
         except OSError as os_e:
             print("文件打开异常！",os_e)
         finally:
-            pass
+            print(file_name,":搜索完成！")
 
     def doc_parser_comm(self,file_name,subject_name):
         '''
@@ -180,7 +190,7 @@ class database_proc:
         '''
         with pd.ExcelFile(file_name) as xls:
             self.database_sheet_names = xls.sheet_names  #获取excel文件的sheet列表
-            self.database = pd.read_excel(xls,self.database_sheet_names[sheet_index])        
+            self.database = pd.read_excel(xls,self.database_sheet_names[sheet_index],index_col=0)  #指定第一列为索引列      
 
     def save_database_to_excel(self,file_name,sheet_name):
         '''
@@ -189,7 +199,7 @@ class database_proc:
            sheet_name : 写入的sheet名称
         '''
         with pd.ExcelWriter(file_name) as writer: # pylint: disable=abstract-class-instantiated
-            self.database.to_excel(writer,sheet_name,index=False) #将pd写入example_file
+            self.database.to_excel(writer,sheet_name,index=True,index_label="题号") #将pd写入example_file，索引列名为题号
             # print(self.database.head(3))                #打印前3行元素
             # print(self.database.index)                  #得到dataframe的行元素
             # print(self.database.columns)                #得到dataframe的列元素
@@ -217,10 +227,12 @@ if __name__ == "__main__":
     print(dp.database)
     print("######################################################")
 
-    dp.doc_parser_comm(r".\题库\心理学考研必背300题.docx","发展心理学")
-    # dp.doc_parser(r".\题库\发展心理学名词解释及论述.docx")
+    dp.get_data_form_excel('example.xlsx')
 
-    dp.save_database_to_excel(r'.\example.xlsx',"发心")
+    # dp.doc_parser_comm(r".\题库\心理学考研必背300题.docx","发展心理学")
+    # dp.doc_parser(r".\题库\普通心理学名词解释及论述.docx")
+
+    # dp.save_database_to_excel(r'.\example.xlsx',"发心")
 
     print("######################################################")
     print(dp.database)
