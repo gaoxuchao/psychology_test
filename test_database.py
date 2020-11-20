@@ -83,6 +83,7 @@ class database_proc(object):
             print("文件打开异常！",os_e)
         finally:
             print(file_name,":搜索完成！")
+        #endfunction:doc_parser        
 
     def doc_parser_comm(self,file_name,subject_name):
         '''
@@ -145,23 +146,12 @@ class database_proc(object):
                                 self.columns_name[5]:0}
 
                     self.database = self.database.append(tmp_dict,ignore_index=True)
-                
-                # if ("简答：" in pgs.text) or ("简述" in pgs.text):
-                #     
-                # elif "论述：" in pgs.text:
-                #     test_type = '论述'
-                # elif search_rslt != None:
-                #     test_type = '名词解释'
-                # else:
-                #     test_type = None 
-
-                # if test_type != None:
-
 
         except OSError as os_e:
             print("文件打开异常！",os_e)
         finally:
-            pass        
+            print(file_name,' ：扫描完成！')
+       
 
     def database_init(self):
         '''
@@ -203,7 +193,21 @@ class database_proc(object):
             # print(self.database.head(3))                #打印前3行元素
             # print(self.database.index)                  #得到dataframe的行元素
             # print(self.database.columns)                #得到dataframe的列元素
+        
+        app=xw.App(visible=False,add_book=False)  
+        app.display_alerts=False
+        app.screen_updating=False
 
+        wb  = app.books.open(file_name)
+        sht = wb.sheets[0]
+        sht.autofit('c')                     #列宽自适应
+        sht.range('a1:g1').color=(255,0,0)     #名称行设置为红色
+        sht.range('c1').column_width = 80       #列宽设置为5
+        # sht.autofit('r')   
+        wb.save()
+        wb.close()
+        app.quit()
+        
 
 
 # wb = xw.Book(".\example.xlsx")
@@ -227,12 +231,12 @@ if __name__ == "__main__":
     print(dp.database)
     print("######################################################")
 
-    dp.get_data_form_excel('example.xlsx')
+    # dp.get_data_form_excel('example.xlsx')
 
     # dp.doc_parser_comm(r".\题库\心理学考研必背300题.docx","发展心理学")
-    # dp.doc_parser(r".\题库\普通心理学名词解释及论述.docx")
+    dp.doc_parser(r".\题库\普通心理学名词解释及论述.docx")
 
-    # dp.save_database_to_excel(r'.\example.xlsx',"发心")
+    dp.save_database_to_excel(r'.\example.xlsx',"发心")
 
     print("######################################################")
     print(dp.database)
