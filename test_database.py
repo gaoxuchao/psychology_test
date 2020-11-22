@@ -26,7 +26,7 @@ class database_proc(object):
         self.database_init()
 
         #默认参数，用来初始化题目的默认重要性
-        self.default_value = 0
+        self.default_value = 1
 
         self.most_important = 3
         self.important      = 2
@@ -151,7 +151,7 @@ class database_proc(object):
             print("文件打开异常！",os_e)
         finally:
             print(file_name,' ：扫描完成！')
-       
+    
 
     def database_init(self):
         '''
@@ -200,8 +200,8 @@ class database_proc(object):
 
         wb  = app.books.open(file_name)
         sht = wb.sheets[0]
-        sht.autofit('c')                     #列宽自适应
-        sht.range('a1:g1').color=(255,0,0)     #名称行设置为红色
+        sht.autofit('c')                        #列宽自适应
+        sht.range('a1:g1').color=(255,0,0)      #名称行设置为红色
         sht.range('c1').column_width = 80       #列宽设置为5
         # sht.autofit('r')   
         wb.save()

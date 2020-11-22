@@ -37,6 +37,12 @@ class subject_db(database_proc):
 
         self.test_doc_comm     = self.test_database_path + r"心理学考研必背300题.docx"
 
+        self.sim_des_impt  = 1 #简答题出题难度默认最低为1
+        self.des_impt      = 1 #论述题出题难度默认最低为1
+        self.term_expl_impt= 1 #名词解释出题难度默认最低为1
+
+        self.test_num_init()
+
     def parser_subject(self):
         '''
         封装父类方法，直接生成题库
@@ -47,7 +53,7 @@ class subject_db(database_proc):
         self.save_database_to_excel(self.subject_name+'.xlsx','sheet1')
         print("######################################################")
 
-    def add_new_test(self,test_type:str,test_text:str,page_num:int,importance:int,right_cnt:int=0,wrong_cnt:int=0):
+    def add_new_test(self,test_type:str,test_text:str,page_num:int,importance:int=1,right_cnt:int=0,wrong_cnt:int=0):
         '''
         功能：向题库中加入一道新题。
 
@@ -55,7 +61,7 @@ class subject_db(database_proc):
              test_type:题目类型，字符串，“简答”，“名词解释”或者“论述”
              test_text:题目内容，字符串，文字叙述
              page_num :对应书中页码，整数
-             importance：重要性，0-3，默认为0
+             importance：重要性，0-3，默认为1
              right_cnt: 答对次数，默认为0
              wrong_cnt: 答错次数，默认为0
         '''
@@ -71,37 +77,147 @@ class subject_db(database_proc):
         #刷新xlsx文件
         self.save_database_to_excel(self.subject_name+'.xlsx','sheet1')
 
+    def test_num_init(self):
+
+        if self.sub_enum == subject.DVP_PSY:
+            self.simple_describ_num = 2
+            self.term_expl_num      = 2
+            self.describ_num        = 1 
+        elif self.sub_enum == subject.EDU_PSY:
+            self.simple_describ_num = 0 #教心简答题出题数默认设置为0
+            self.term_expl_num      = 1
+            self.describ_num        = 1 
+        elif self.sub_enum == subject.EXP_PSY:   
+            self.simple_describ_num = 2
+            self.term_expl_num      = 1
+            self.describ_num        = 0 #实验论述题出题数默认设置为0 
+        elif self.sub_enum == subject.COMM_PSY: 
+            self.simple_describ_num = 2
+            self.term_expl_num      = 2
+            self.describ_num        = 1 
+        elif self.sub_enum == subject.STA_PSY:
+            self.simple_describ_num = 1
+            self.term_expl_num      = 1
+            self.describ_num        = 0 #统计没有论述 
+        elif self.sub_enum == subject.SOC_PSY:
+            self.simple_describ_num = 1
+            self.term_expl_num      = 2
+            self.describ_num        = 1 # 社心论述题出题数默认设置为0 
+        elif self.sub_enum == subject.MES_PSY:
+            self.simple_describ_num = 0 # 测量简答题默认出题数为0
+            self.term_expl_num      = 1
+            self.describ_num        = 1 # 题库中测量的论述题为0
+        else:
+            print("Cannot find subject you enter!")
+            self.simple_describ_num = 0 # 测量简答题默认出题数为0
+            self.term_expl_num      = 0
+            self.describ_num        = 0 
+
     def quiz_setter(self,type:str,num:int,importance:int=0,repeat:bool=False):
         '''
-        功能：出题器
-        type：出题类型
+        功能：出题器 
+        type：出题类型,str:[“简答”，“名词解释”,“论述”]
         num：题目数量
         importance：题目最低的重要性，默认为0
         repeat:是否重复，如果设置为True，则可能出现之前出过的题
         '''            
         # columns_name = ["题目类型","内容","页码","重要性","答对次数","答错次数"]
-        if repeat:
+        if repeat: 
+            #出现之前做过题
             pd_tmp = self.database[(self.database["题目类型"] == type) & (self.database['重要性']>=importance)]
         else:
-            pass
-        pd_tmp.sample(n=num,weights=pd_tmp["重要性"])
-        # print(pd_tmp)
-        #len(pd_tmp.index) 获取df长度
+            #只从没做过的题中抽取
+            pd_tmp = self.database[(self.database["题目类型"] == type) & (self.database['重要性']>=importance) & (self.database['答对次数'] + self.database['答错次数'] ==0)]
+
+        if (len(pd_tmp.index) == 0 and num != 0): # 获取df长度
+            print("Error: 在",self.subject_name,"题库中没有找到符合要求的",type,"题")
+        elif (len(pd_tmp.index) < num):
+            print("Error: 在",self.subject_name,"题库中没有找到足够符合要求的",type,"题")
+        elif (pd_tmp["重要性"].sum() == 0 ):
+            #如果重要性之和为0，就不能使用权重抽样
+            pd_tmp = pd_tmp.sample(n=num)
+        else:
+            #从符合条件的题目中根据重要性随机抽样
+            pd_tmp = pd_tmp.sample(n=num,weights=pd_tmp["重要性"])
+
         return pd_tmp
 
+    def auto_quiz_setter_sim_des(self):
+        '''
+           简答题出题器，根据科目类型出题,题目难度默认为0
+        '''
+        pd_sim_des = self.quiz_setter("简答",self.simple_describ_num,self.sim_des_impt)
+        return pd_sim_des
 
+    def auto_quiz_setter_des(self):
+        '''
+           论述题出题器，根据科目类型出题,题目难度默认为0
+        '''
+        pd_dscb = self.quiz_setter("论述",self.describ_num,self.des_impt)
+        return pd_dscb
+
+    def auto_quiz_setter_term_expl(self):
+        '''
+           名词解释出题器，根据科目类型出题,题目难度默认为0
+        '''
+        pd_term_expl = self.quiz_setter("名词解释",self.term_expl_num,self.term_expl_impt)
+        return pd_term_expl
+
+    def change_wrong_num(self,test_index,change_num):
+        '''
+            修改本科目下某个题目的答错次数。
+            test_index : 数组格式，每个元素为需要修改的题号
+            change_num : 数组格式，每个元素为对应题号答错次数的增量
+        '''
+        if len(test_index) != len(change_num):
+            print("输入格式错误，题号和修改量数目不一致")
+        else:
+            for i in range(len(test_index)):
+                self.database.loc[[test_index[i]],["答错次数"]] += change_num[i]
+
+        #刷新xlsx文件
+        self.save_database_to_excel(self.subject_name+'.xlsx','sheet1')
+        
+    def change_right_num(self,test_index,change_num):
+        '''
+            修改本科目下某个题目的答对次数。
+            test_index : 数组格式，每个元素为需要修改的题号
+            change_num : 数组格式，每个元素为对应题号答错次数的增量
+        '''
+        if len(test_index) != len(change_num):
+            print("输入格式错误，题号和修改量数目不一致")
+        elif len(test_index) == 0:
+            print("输入格式错误")
+        else:
+            for i in range(len(test_index)):
+                self.database.loc[[test_index[i]],["答对次数"]] += change_num[i]     
+        #刷新xlsx文件
+        self.save_database_to_excel(self.subject_name+'.xlsx','sheet1')           
+
+
+##################################################################################################
 if __name__ == "__main__":
     # print(subject.DVP_PSY)
+
     subject_db_dvp = subject_db(subject.DVP_PSY)
+    subject_db_dvp.get_data_form_excel(subject_db_dvp.subject_name + '.xlsx')
 
 
-    subject_db_dvp.get_data_form_excel(r'发展心理学.xlsx')
-    print("######################################################")
-    print(subject_db_dvp.database)
-    print("######################################################")
-
-    pd_des = subject_db_dvp.quiz_setter("论述",2)
+    # print("######################################################")
+    # # print(subject_db_dvp.database)
+    # print("######################################################")
+    # pd_des = subject_db_dvp.auto_quiz_setter_des()
+    # print(pd_des)
+    # print("######################################################")
+    # pd_des = subject_db_dvp.auto_quiz_setter_sim_des()
+    # print(pd_des)
+    # print("######################################################")
+    pd_des = subject_db_dvp.auto_quiz_setter_term_expl()
     print(pd_des)
+    print("######################################################")
+    # print(pd_des.index)
+    subject_db_dvp.change_wrong_num(pd_des.index,[1]*len(pd_des.index))
+
     # subject_db_dvp.add_new_test('简答','新题目',455,3)
     # print("######################################################")
     # print(subject_db_dvp.database)
@@ -109,7 +225,6 @@ if __name__ == "__main__":
     # subject_db_dvp.parser_subject()
     # subject_db_dvp.save_database_to_excel(r'发展心理学.xlsx',"发心")
     # print(subject_db_dvp.database)
-
 
     # subjects = [] #初始化空列表
     # for sub in subject:
