@@ -3,7 +3,7 @@ from test_database import  subject
 
 
 class subject_db(database_proc):
-    def __init__(self,subject_enum:subject):
+    def __init__(self,subject_enum:subject,sub_id:int):
         '''
         subject_enum ：类型为subject的枚举变量
         '''
@@ -12,6 +12,8 @@ class subject_db(database_proc):
         self.test_database_path = r".\题库" "\\"
 
         self.sub_enum = subject_enum
+
+        self.subject_id = sub_id
 
         #根据传入的枚举值初始化docx文件名
         self.subject_name = subject_enum.value
@@ -199,7 +201,7 @@ class subject_db(database_proc):
 if __name__ == "__main__":
     # print(subject.DVP_PSY)
 
-    subject_db_dvp = subject_db(subject.DVP_PSY)
+    subject_db_dvp = subject_db(subject.DVP_PSY,0)
     subject_db_dvp.get_data_form_excel(subject_db_dvp.subject_name + '.xlsx')
 
 
