@@ -15,13 +15,27 @@ class subject(Enum):
     MES_PSY  = '心理测量学'
     EXP_PSY  = '实验心理学'
 
+class pd_columns(Enum): # no used
+    TYPE       = "题目类型"
+    CONTENT    = "内容" 
+    PAGE_NUM   = "页码"
+    IMPORTANCE = "重要性"
+    RIGHT_NUM  = "答对次数"
+    WRONG_NUM  = "答错次数"
+    TEST_CNT   = "出题次数"
 
 
 class database_proc(object):
     def __init__(self):
 
         #初始化pandas列标题
-        self.columns_name = ["题目类型","内容","页码","重要性","答对次数","答错次数"]
+        self.columns_name = ["题目类型",
+                            "内容",
+                            "页码",
+                            "重要性",
+                            "答对次数",
+                            "答错次数",
+                            "出题次数"]
 
         self.database_init()
 
@@ -75,7 +89,8 @@ class database_proc(object):
                                 self.columns_name[2]:int(page_num),
                                 self.columns_name[3]:self.default_value,
                                 self.columns_name[4]:0,
-                                self.columns_name[5]:0}
+                                self.columns_name[5]:0,
+                                self.columns_name[6]:0}
 
                     self.database = self.database.append(tmp_dict,ignore_index=True)
 
@@ -137,13 +152,14 @@ class database_proc(object):
 
                     test_text = importance_re.sub("",pgs.text)
 
-                    # columns_name = ["题目类型","内容","页码","重要性","答对次数","答错次数"]
+                    # columns_name = ["题目类型","内容","页码","重要性","答对次数","答错次数","出题次数"]
                     tmp_dict = {self.columns_name[0]:test_type,
                                 self.columns_name[1]:test_text,
                                 self.columns_name[2]:0,
                                 self.columns_name[3]:importance,
                                 self.columns_name[4]:0,
-                                self.columns_name[5]:0}
+                                self.columns_name[5]:0,
+                                self.columns_name[6]:0}
 
                     self.database = self.database.append(tmp_dict,ignore_index=True)
 
