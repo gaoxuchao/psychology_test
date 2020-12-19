@@ -99,7 +99,7 @@ class subject_db(database_proc):
             self.term_expl_num      = 1
             self.describ_num        = 0 #实验论述题出题数默认设置为0 
         elif self.sub_enum == subject.COMM_PSY: 
-            self.simple_describ_num = 2
+            self.simple_describ_num = 1
             self.term_expl_num      = 2
             self.describ_num        = 1 
         elif self.sub_enum == subject.STA_PSY:
@@ -107,13 +107,13 @@ class subject_db(database_proc):
             self.term_expl_num      = 1
             self.describ_num        = 0 #统计没有论述 
         elif self.sub_enum == subject.SOC_PSY:
-            self.simple_describ_num = 1
+            self.simple_describ_num = 2
             self.term_expl_num      = 2
-            self.describ_num        = 1 # 社心论述题出题数默认设置为0 
+            self.describ_num        = 0 # 社心论述题出题数默认设置为0 
         elif self.sub_enum == subject.MES_PSY:
             self.simple_describ_num = 0 # 测量简答题默认出题数为0
             self.term_expl_num      = 1
-            self.describ_num        = 1 # 题库中测量的论述题为0
+            self.describ_num        = 1 # 题库中测量的论述题为1
         else:
             print("Cannot find subject you enter!")
             self.simple_describ_num = 0 # 测量简答题默认出题数为0
@@ -140,8 +140,10 @@ class subject_db(database_proc):
             pd_tmp = self.database[(self.database["题目类型"] == type) & (self.database['重要性']>=importance)]
         else:
             #只从没做过的题中抽取
-            pd_tmp = self.database[(self.database["题目类型"] == type) & (self.database['重要性']>=importance) & (self.database['出题次数'] ==0)]
-
+            pd_tmp = self.database[(type == self.database["题目类型"]) & (self.database['重要性']>=importance) & (self.database['出题次数'] ==0)]
+        # print("----------------------------")
+        # print(self.database[(type == self.database["题目类型"])])
+        # print("----------------------------")
         if (len(pd_tmp.index) == 0 and num != 0): # 获取df长度
             print("Error: 在",self.subject_name,"题库中没有找到符合要求的",type,"题")
         elif (len(pd_tmp.index) < num):
@@ -230,7 +232,7 @@ if __name__ == "__main__":
     #     psy_sub.parser_subject()
 
 
-    subject_db_dvp = subject_db(subject.DVP_PSY,0)
+    subject_db_dvp = subject_db(subject.MES_PSY,0)
 
     subject_db_dvp.get_data_form_excel(subject_db_dvp.sub_xlsx_file_name + '.xlsx')
 
@@ -244,16 +246,16 @@ if __name__ == "__main__":
     # pd_des = subject_db_dvp.auto_quiz_setter_sim_des()
     # print(pd_des)
     # print("######################################################")
-    pd_des = subject_db_dvp.auto_quiz_setter_term_expl()
+    pd_des = subject_db_dvp.auto_quiz_setter_des(False)
     print(pd_des)
     print("######################################################")
     # print(pd_des.index)
     # subject_db_dvp.change_wrong_num(pd_des.index,[1]*len(pd_des.index))
 
     # subject_db_dvp.add_new_test('简答','新题目',455,3)
-    print("######################################################")
-    print(subject_db_dvp.database)
-    print("######################################################")
+    # print("######################################################")
+    # print(subject_db_dvp.database)
+    # print("######################################################")
     # subject_db_dvp.parser_subject()
     # subject_db_dvp.save_database_to_excel(r'发展心理学_test.xlsx',"发心")
     # print(subject_db_dvp.database)

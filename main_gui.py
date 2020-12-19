@@ -220,7 +220,8 @@ if __name__ == "__main__":
     print("######################################################")
     test = test_main()
     # test.init_xlxs_from_docs()
-    test.make_test(2)
+    for i in range(6):
+        test.make_test(i+11)
     # test.save_test_to_xlsx(0)
     # test.create_test_doc(4)
     print("######################################################")

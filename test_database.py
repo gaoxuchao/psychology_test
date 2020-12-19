@@ -196,7 +196,9 @@ class database_proc(object):
         '''
         with pd.ExcelFile(file_name) as xls:
             self.database_sheet_names = xls.sheet_names  #获取excel文件的sheet列表
-            self.database = pd.read_excel(xls,self.database_sheet_names[sheet_index],index_col=0)  #指定第一列为索引列      
+            self.database = pd.read_excel(xls,self.database_sheet_names[sheet_index],index_col=0)  #指定第一列为索引列 
+            #FIX_BUG,在读取题库时，将题目类型中的空格全部清除  
+            self.database["题目类型"] = self.database["题目类型"].str.replace(" ","")   
 
     def save_database_to_excel(self,file_name,sheet_name):
         '''
